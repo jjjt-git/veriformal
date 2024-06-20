@@ -1,5 +1,5 @@
 theory Semantic
- imports Syntax BasicDefinitions "~~/src/HOL/Finite_Set" Orderings
+ imports Syntax BasicDefinitions HOL.Finite_Set
 begin 
 
 (**************************** Evaluating expressions **************************************)
@@ -275,7 +275,7 @@ term "\<^sub>b\<^sub>nR2 [+] \<^sub>b\<^sub>nR2 [+] \<^sub>v(1, 4)"
            (fst(slicebv bvold n n) \<noteq> fst(slicebv bvnew n n)) \<and> (q1 = q2)
        | exp_bitslice q2 n2 n1 \<Rightarrow>
            (fst(slicebv bvold n2 n1) \<noteq> fst(slicebv bvnew n2 n1)) \<and> (q1 = q2)
-       | exp_name q2 \<Rightarrow> q1 = q2  (*value is different, already checked [processue]*)
+       | exp_name q2 \<Rightarrow> q1 = q2
        | _ \<Rightarrow> False)
     | _ \<Rightarrow> False
     )"
@@ -557,9 +557,9 @@ term "\<^sub>b\<^sub>nR2 [+] \<^sub>b\<^sub>nR2 [+] \<^sub>v(1, 4)"
   "newcycle C =  
      (let FE = cancelling (cfg_fute C) in 
       let nt = timeofhd(FE) in
-      let FE' = filter (awake nt) FE in  (*awaken*)
-       (C\<lparr>cfg_actp:= map futtoproc FE',  (*activated*)
-          cfg_fute:= listminus FE FE',   (*sleeping*)
+      let FE' = filter (awake nt) FE in
+       (C\<lparr>cfg_actp:= map futtoproc FE',
+          cfg_fute:= listminus FE FE',
           cfg_time:= nt\<rparr>)
       )" 
 

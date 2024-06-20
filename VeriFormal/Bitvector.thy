@@ -1,7 +1,10 @@
 theory Bitvector
- imports Main "~~/src/HOL/Word/Word"
+  imports Main
+    "HOL-Library.Word"
+    Bits_Bit
+    Bits_Int
 begin
- 
+
 (*the value and size of bitvector*)
  type_synonym bitvector = "(int * nat)"
 
@@ -23,7 +26,7 @@ begin
 
 (*Replaces bits n1 to n2 (with n2 \<ge> n1) in bv1 with bits in bv2.*)
   definition slicebva :: "bitvector \<Rightarrow> bitvector \<Rightarrow> nat \<Rightarrow> nat  \<Rightarrow> bitvector" where
-  "slicebva bv1 bv2 n2 n1 = 
+  "slicebva bv1 bv2 n2 n1 =
    (((fst bv1) AND (NOT (maskn((n2-n1)+1) << n1))) OR (((fst bv2) AND maskn((n2-n1)+1)) << n1), snd(bv1))" 
  
 (* Both are the same in functionality. Note the difference... isn't it amazing? 
@@ -38,7 +41,7 @@ begin
  NOTE: the resultant value may be greater than the length of vector, but would be later truncated
   when stored in a variable (e.g., concbv (4, 2) (0, 3)) = (32, 5) *)
  definition concbv :: "bitvector \<Rightarrow> bitvector \<Rightarrow> bitvector" where
-  "concbv bv1 bv2 =   (let bv = bvlsn (fst bv1, (snd bv1) + (snd bv2)) (snd bv2) in
+  "concbv bv1 bv2 = (let bv = bvlsn (fst bv1, (snd bv1) + (snd bv2)) (snd bv2) in
     slicebva bv bv2 ((snd bv2)-1) 0)"
 
 
@@ -75,28 +78,26 @@ begin
  | bvsLOR   ("[||]")
 
  definition unopbv:: "uop \<Rightarrow> bitvector \<Rightarrow> bitvector" where
-  "unopbv vop v \<equiv> (case vop of 
-    bvPOS \<Rightarrow> (if fst(v) < 0 then (-fst(v), snd(v)) else v)  (*todo: puting + or reversing -?*)
-  | bvNEG \<Rightarrow> (-fst(v), snd(v)) 
-  | bvNOT \<Rightarrow> (if fst(v) \<ge> 1 then (0, snd(v)) else (1, snd(v)))  (*turns nonzero/true value of the operand into 0, zero or false value into 1*)
-  | bvCOMP \<Rightarrow> (NOT(fst(v)), snd(v))  (*inverts all the bits*)
-  (*| other unary operations*) 
+  "unopbv vop v \<equiv> (case vop of
+    bvPOS \<Rightarrow> (if fst(v) < 0 then (-fst(v), snd(v)) else v)
+  | bvNEG \<Rightarrow> (-fst(v), snd(v))
+  | bvNOT \<Rightarrow> (if fst(v) \<ge> 1 then (0, snd(v)) else (1, snd(v)))
+  | bvCOMP \<Rightarrow> (NOT(fst(v)), snd(v))
   )"
 
  (*Binary bitvectors operations*)
  definition binopbv :: "bitvector \<Rightarrow> bop \<Rightarrow> bitvector \<Rightarrow> bitvector" where
   "binopbv v1 vop v2 \<equiv> (case vop of 
-    bvsAND \<Rightarrow> (fst(v1) AND fst(v2), max (snd(v1)) (snd(v2))) 
+    bvsAND \<Rightarrow> (fst(v1) AND fst(v2), max (snd(v1)) (snd(v2)))
   | bvsOR \<Rightarrow> (fst(v1) OR fst(v2), max (snd(v1)) (snd(v2)))
   | bvsXOR \<Rightarrow> (fst(v1) XOR fst(v2), max (snd(v1)) (snd(v2)))
-  | bvsXNOR \<Rightarrow> (NOT(fst(v1) XOR fst(v2)), max (snd(v1)) (snd(v2)))     (* value 'nat(NOT(2 XOR 1))' *)
-  | bvsMULT \<Rightarrow> (fst(v1) * fst(v2), (snd(v1)) + (snd(v2)))      (*(snd(v1)) + (snd(v2)),  all of the rest: max (snd(v1)) (snd(v2))*)
+  | bvsXNOR \<Rightarrow> (NOT(fst(v1) XOR fst(v2)), max (snd(v1)) (snd(v2)))
+  | bvsMULT \<Rightarrow> (fst(v1) * fst(v2), (snd(v1)) + (snd(v2)))
   | bvsPLUS \<Rightarrow> (fst(v1) + fst(v2), max (snd(v1)) (snd(v2)))
   | bvsSUB \<Rightarrow> (fst(v1) - fst(v2), max (snd(v1)) (snd(v2)))
   | bvsDIV \<Rightarrow> (fst(v1) div fst(v2), max (snd(v1)) (snd(v2)))
-  | bvsMOD \<Rightarrow> (fst(v1) mod fst(v2), max (snd(v1)) (snd(v2))) 
+  | bvsMOD \<Rightarrow> (fst(v1) mod fst(v2), max (snd(v1)) (snd(v2)))
   | bvsCONC \<Rightarrow> concbv v1 v2
-  (* | other binary operations *)
  )"
 
  definition booltobv :: "bool \<Rightarrow> bitvector" where

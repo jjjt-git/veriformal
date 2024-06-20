@@ -1,5 +1,5 @@
 theory BasicDefinitions
- imports Syntax "~~/src/HOL/Finite_Set" Orderings
+ imports Main Syntax HOL.Finite_Set
 begin
 
 
@@ -71,8 +71,8 @@ begin
    | stm_tba _ _ e \<Rightarrow> senslexp e
    | stm_dnba _ _ e \<Rightarrow> senslexp e
    | stm_tnba _ _ e \<Rightarrow> senslexp e
-   | stm_ife e ts fs \<Rightarrow> senslstm ts @ senslstm fs   (*really so?*)
-   | stm_while e s \<Rightarrow> senslstm s                    (*how many times?*)
+   | stm_ife e ts fs \<Rightarrow> senslstm ts @ senslstm fs
+   | stm_while e s \<Rightarrow> senslstm s
    | stm_cb _ s \<Rightarrow>senslstm s
    | stm_case e csl ds \<Rightarrow> (case csl of 
        Nil \<Rightarrow> senslstm ds 

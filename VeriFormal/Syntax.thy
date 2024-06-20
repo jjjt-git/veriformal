@@ -88,11 +88,12 @@ term "\<^sub>b\<^sub>nR2 [+] \<^sub>v(1, 4)"
 
  type_synonym stml = "statement list"
 
- text{*"If a signal on a sensitivity changes according to its prescribed polarity, the
+ (*
+text{*"If a signal on a sensitivity changes according to its prescribed polarity, the
   procedural block is triggered. On the other hand, if a signal changes that is not on 
   the sensitivity list but is present in the right-hand side of some procedural statements 
   of the block, the procedural statements will not be updated."*}
-
+*)
  
 (*top_assign represents continuous assignments. The assignment occurs
 whenever simulation causes the value of the right-hand side to change*)
@@ -182,7 +183,7 @@ whenever simulation causes the value of the right-hand side to change*)
    cfg_listne :: "event list"
    cfg_disabs :: "name set"
    cfg_finish :: bool
-
+(*
 text{*"When multiple processes are triggered at the same time, the order 
   in which the processes are executed is not specified by Institute of 
   Electrical and Electronics Engineers (IEEE) standards. Thus, it is 
@@ -190,7 +191,7 @@ text{*"When multiple processes are triggered at the same time, the order
   called nondeterminism." Active processes are, therefore, modeled as a set
   (lists are easy to deal with, so we are using list instead).
   The processing of all the active events is called a simulation cycle.*}
-
+*)
 (*initial program configuration*)
  definition initconfig :: configuration where
    "initconfig \<equiv> \<lparr> 
