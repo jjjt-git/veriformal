@@ -1,0 +1,111 @@
+
+- fedinput (TODO)
+  The fedinput function initializes identifiers to the value desired. To do so, it
+  creates active process for each identifier with the new value. It is mentioned in 
+  'fedinput' function comment that these processes (for initialization) are executed
+   first, but this does not happen in practice. The 'stepsim' function executes 
+   update events first. That is, if there is any update event in the Verilog module,
+   it will update the value of an identifier and then the 'fedinput' generated
+   active process will initilize it back to 0, and hence the meaning of the 
+   execution will be wrong. 
+
+   definition terminating_if :: program where
+  "terminating_if =
+   module ([])
+   [
+    reg [3:0] [X, Y, Z],
+   
+    assign #-1 [?nY]= ?v(5,4),
+    always ( [#]1 BEGIN : [None]
+       IF ?l?nY [==] ?v(0, 4)
+                  THEN ([?nZ] [=] [#] - 1 ?v(6, 4))
+                  ELSE (([?nZ] [=] [#] - 1 ?v(7, 4));;
+                       $finish)
+     END )
+   ]
+  endmod
+  "
+  value "simulate 2 (fedinput [(X,0), (Y,0), (Z, 0)] (state terminating_if))"
+
+  It result Z=6, which is wrong. The continuous assign updates Y=5, and the condition in IF
+  should have failed to produce Z=7, but it does not. In fact, the process created by 
+  'fedinput' to initialize Z to 0 executes AFTER the update event registered for continuous
+  assignment. This later change the value of Y to 5, and hence the guard condition in IF
+  fails. 
+  'fedinput' executes 
+
+- evalexp (fixed)
+  In old version of this function, there were FOUR mistakes, namely in the cases of
+  - exp_uop
+  - exp_bop
+  - exp_rsn
+  - exp_lsn
+
+
+- Terminating a process execution (if-then-else case) (FIXED: chosoe max of processes for the if-then-else in
+   [countcpt] function)
+   VeriFormal temrinates execution if a condition is not met. In the condition, it caluculates 
+   number of processes in a process and this number MUST decrease in each iteration. Non-deterministic
+   statements (such as if-statement) this is difficult. The existing condition was calculating processes
+   of either the then or else branch based on the condition in the guard at the begining of process execution.
+   HOWEVER, if the process itslelf later change the value of the identifier in the guard in such a way that
+   that a different branch is considered and the total number of processes count is more than the initial
+   count, then the if-statement will not be executed (termination condition is met).
+  A hardly found example is the following:
+    definition terminating_if :: program where
+     "terminating_if =  module ([])
+       [ reg [3:0] [X, Y, Z],
+       always ( [#]1 BEGIN : [None]
+ 3        ([?nY] [=] [#] - 1 ?v(6, 4));;
+          (IF ?l?nY [==] ?v(6, 4)
+ 5         THEN (([?nZ] [=] [#] - 1 ?v(7, 4));;
+ 6           ([?nX] [=] [#] - 1 ?v(3, 4)))
+ 7        ELSE ([?nZ] [=] [#] - 1 ?v(6, 4)) )
+          END ) ]
+       endmod" 
+      value "simulate 2 ((state terminating_if))"  
+
+ The above function result Z = 0, instead of Z = 7. The reason is, initially the number of processes counted 
+ in the sequence staement in BEGIN...END block is 5 (as the initial value of Y = 0, at the process calculation 
+ time
+ the ELSE branch is chosen). There are 2 processes at line 3 plus 1 process at line 7.
+ Later on, when the statement at line 3 is executed, it changes the value of Y and now the THEN branch will be
+ chosen for processes count. The new count (in next iteration) would be 3 (instead of decreasing, it remains the same or increasing
+ depending the difference of sum of statements in the ELSE and THEN branches).
+ There are 2 processes at line 5, 1 at line 6, 1 at line 7 (the ;; is counted as a process).
+ According to the termination condition, the execution of 
+ the recursive function stop if number of processes in each iteration DO NOT decrease. 
+
+ More detail:
+ (*Termination issue: for the example below, the [countcpt] function will count 3 processes
+ as the initial value of Y is 0, hence the FALSE branch is counted, but when the code is actually
+ executed, the blocking assignment BEFORE if statment will update the value of Y (to 6) and this
+ time the guard condition in IF statement will be true, and hence the THEN part will be chosen 
+ for counting, which has two more statements than the ELSE branch. Total number of processes will 
+ now be 5. So the number of processes in next iteration has increased and the function will
+ terminate while it should not. *)
+value "countcpt [(X,0,4), (Y,0,4), (Z,0,4)] 
+  (cpt_stm (([?nY] [=] [#] - 1 ?v(6, 4));;
+            (IF ?l?nY [==] ?v(6, 4)
+             THEN (([?nZ] [=] [#] - 1 ?v(7, 4));;
+                 ([?nX] [=] [#] - 1 ?v(3, 4)))
+             ELSE ([?nZ] [=] [#] - 1 ?v(6, 4)) )
+           )
+   )"
+
+
+ 4. An assign statement without delay and identifer on the right body is executed BEFORE than
+    initial statement. See [mkconfig] and [toptocu] functions in [Semantic.thy]. TODO
+
+ 5. Always block with delay was added to active (statement) event (by the function [toptoproc]),
+    which was later executed by [execstm] creating inactive or future 
+    event depending on the delay (0 or non-zero). It changes the order of execution of events: inactive
+    event is added later by [execstm], while it should have been added the time always blcok with
+    zero delay was first encountered.
+   CORRECTION: When the state is updated, 
+       a) inactive event is added if delay is zero: [toptoinact] function, second case. 
+       b) future event is added if delay is non-zero: [toptofut] function, third case.
+       c) the corresponding case (adding a process) is deleted from the [toptoproc]. 
+       d) the corresponding case for stm_delay in [execstm] is delected. 
+        
+      
